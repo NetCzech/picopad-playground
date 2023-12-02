@@ -24,11 +24,11 @@ void drawSignalRect(int x, int y, int width, int height, int color) {
 // Definition X-axis
 void drawXaxis(int startX, int endX, int numLabelsX) {
   int yStep = (startX - endX) / numLabelsX;
-
   // Draw X-axis labels and line
   for (int i = 0; i < numLabelsX; i++) {
     int channelX = map(i + 1, 1, numLabelsX, 10, 310);
     DrawLine(channelX, startX + 2, channelX, startX - 2, COL_WHITE);
+    // Draw the X-axis coordinates
     SelFont8x8();
     DrawText(String(i + 1).c_str(), channelX - 3, startX + 10, COL_WHITE);
   }
@@ -44,9 +44,10 @@ void graphScanner() {
   SelFont8x16();
   DrawText("Wi-Fi Scanner for Picopad", 65, 2, COL_YELLOW);
   DrawLine(0, 20, 320, 20, COL_WHITE);
+  
   // Draw X-axis
   drawXaxis(200, 5, 14);
-  //DrawLine(0, 220, 320, 220, COL_WHITE);
+  
   // Draw a footer
   SelFont8x8();
   DrawLine(0, 221, 320, 221, COL_WHITE);
@@ -54,6 +55,7 @@ void graphScanner() {
   DrawText("scan", 30, 230, COL_WHITE);
   DrawText("B", 110, 230, COL_YELLOW);
   DrawText("list of Wi-Fi networks", 135, 230, COL_WHITE);
+  
   // Display update
   DispUpdate();
 
@@ -74,6 +76,7 @@ void graphScanner() {
               // Draw rectangles of Wi-Fi signal strength
               int rectX = map(WiFi.channel(i), 1, 14, 4, 304);
               int rectY = 203;
+              
               //Set the color of the rectangle according to the strength of the Wi-Fi signal
               int signalStrength = WiFi.RSSI(i);
               int rectColor;
@@ -88,17 +91,19 @@ void graphScanner() {
               }
               // Calculate the height of the Wi-Fi signal strenght rectangle
               int barHeight = map(signalStrength, -90, -30, minHeight, maxHeight);
+              
               // Draw a rectangle of Wi-Fi signal strength
               drawSignalRect(rectX, rectY, rectWidth, barHeight, rectColor);
-
-              // Draw the X-axis coordinates
+              
+              // Draw the Wi-Fi signal strength column numbers
               SelFont8x8();
-              DrawText(String(i + 1).c_str(), rectX - 3, rectY - barHeight - 15, COL_WHITE);
-
+              DrawText(String(i + 1).c_str(), rectX + 3, rectY - barHeight - 15, COL_WHITE);
+              
               // Draw the header
               SelFont8x16();
               DrawText("Wi-Fi Scanner for Picopad", 65, 2, COL_YELLOW);
               DrawLine(0, 20, 320, 20, COL_WHITE);
+              
               // Display SSID of detected Wi-Fi networks
               DrawText("1: ", 5, 30, COL_WHITE);
               DrawText(WiFi.SSID(0), 30, 30, COL_WHITE);
@@ -110,10 +115,13 @@ void graphScanner() {
               DrawText(WiFi.SSID(3), 185, 30, COL_WHITE);
               DrawText("5: ", 160, 45, COL_WHITE);
               DrawText(WiFi.SSID(4), 185, 45, COL_WHITE);
+              
+              // Draw X-axis
               drawXaxis(200, 5, 14);
-              DrawLine(0, 221, 320, 221, COL_WHITE);
+              
               // Draw a footer
               SelFont8x8();
+              DrawLine(0, 221, 320, 221, COL_WHITE);
               DrawText("X", 5, 230, COL_YELLOW);
               DrawText("scan", 30, 230, COL_WHITE);
               DrawText("B", 110, 230, COL_YELLOW);

@@ -38,9 +38,9 @@ void textScanner() {
     // Draw the header
     DrawClear();
     SelFont8x16();
-    DrawText("WiFi Scanner for Picopad", 65, 2, COL_YELLOW);
+    DrawText("Wi-Fi Scanner for Picopad", 65, 2, COL_YELLOW);
     DrawLine(0, 20, 320, 20, COL_WHITE);
-    //DrawLine(0, 220, 320, 220, COL_WHITE);
+    
     // Draw a footer
     SelFont8x8();
     DrawLine(0, 221, 320, 221, COL_WHITE);
@@ -50,7 +50,7 @@ void textScanner() {
     // Find available Wi-Fi networks
     int numNetworks = WiFi.scanNetworks();
     if (numNetworks == 0) {
-    DrawText("No WiFi networks found", 5, 5, COL_WHITE);
+    DrawText("No Wi-Fi networks found", 5, 5, COL_WHITE);
     } else {
       // Set the number of Wi-Fi networks displayed
       for (int i = 0; i < min(5, numNetworks); i++) {
@@ -92,6 +92,7 @@ void textScanner() {
           delay(10);
           graphScanner();
           break;
+      
       // Set the Y key
       case KEY_Y:
           delay(10);

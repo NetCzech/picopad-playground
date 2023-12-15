@@ -74,6 +74,81 @@ void get_cpu_info(CpuInfo *info) {
 	info->totalCores = 2; // RP2040 always has 2 cores
 }
 
+uint8_t picopad_pins() {
+	uint8_t ch = NOKEY;
+	DrawClear();
+	KeyFlush();
+	
+	do {
+        // Set system font
+        SelFont6x8();
+
+        //Draw connector image and description
+        DrawImgRle(ConnectorImg_RLE, ConnectorImg_Pal, 160, 10, 142, 78);
+        DrawText("PIN 1", 152, 70, COL_GRAY);
+
+        // Set system font
+        pDrawFont = FontBold8x8;
+        DrawFontHeight = 8;
+
+        // Draw logo and description
+        DrawImgRle(LogoImg_RLE, LogoImg_Pal, 40, 20, 80, 34);
+        DrawText("CONNECTOR", 51, 55, COL_WHITE);
+		
+        // Set system font
+        SelFont6x8();
+
+        // Draw PIN and description
+        DrawText("1", 15, 80, COL_WHITE);
+        DrawText("GND", 40, 80, COL_GRAY);
+        DrawText("2", 15, 92, COL_WHITE);
+        DrawText("GND", 40, 92, COL_GRAY);
+        DrawText("3", 15, 104, COL_WHITE);
+        DrawText("3V3", 40, 104, COL_DKRED);
+        DrawText("4", 15, 116, COL_WHITE);
+        DrawText("VBAT", 40, 116, COL_DKRED);
+        DrawText("5", 15, 128, COL_WHITE);
+        DrawText("GP28", 40, 128, COL_DKGREEN);
+        DrawText("ADC2", 75, 128, COL_JUNGLE);
+        DrawText("6", 15, 140, COL_WHITE);
+        DrawText("ADC_VREF", 40, 140, COL_JUNGLE);
+        DrawText("7", 15, 152, COL_WHITE);
+        DrawText("GP27", 40, 152, COL_DKGREEN);
+        DrawText("ADC1", 75, 152, COL_JUNGLE);
+        DrawText("I2C1 SCL", 135, 152, COL_LTBLUE);
+        DrawText("8", 15, 164, COL_WHITE);
+        DrawText("GND", 40, 164, COL_GRAY);
+        DrawText("AGND", 75, 164, COL_JUNGLE);
+        DrawText("9", 15, 176, COL_WHITE);
+        DrawText("GP0", 40, 176, COL_DKGREEN);
+        DrawText("SPIO RX", 75, 176, COL_PINK);
+        DrawText("I2C0 SDA", 135, 176, COL_LTBLUE);
+        DrawText("UART0 TX", 195, 176, COL_DKMAGENTA);
+        DrawText("10", 15, 188, COL_WHITE);
+        DrawText("GP26", 40, 188, COL_DKGREEN);
+        DrawText("ADC0", 75, 188, COL_JUNGLE);
+        DrawText("I2C1 SDA", 135, 188, COL_LTBLUE);
+        DrawText("11", 15, 200, COL_WHITE);
+        DrawText("GP1", 40, 200, COL_DKGREEN);
+        DrawText("SPI0 CSn", 75, 200, COL_PINK);
+        DrawText("I2C0 SCL", 135, 200, COL_LTBLUE);
+        DrawText("UART0 RX", 195, 200, COL_DKMAGENTA);
+        DrawText("12", 15, 212, COL_WHITE);
+        DrawText("GP14", 40, 212, COL_DKGREEN);
+        DrawText("SPI1 SCK", 75, 212, COL_PINK);
+        DrawText("I2C1 SDA", 135, 212, COL_LTBLUE);
+
+		// Draw arrow
+		DrawImgRle(ArrowImg_RLE, ArrowImg_Pal, 280, 212, 23, 23);
+
+		DispUpdate();
+	
+		ch = wait_for_keypress(2000);
+		} while (ch == NOKEY);
+
+		return ch;
+}
+
 uint8_t battery_info() {
 	uint8_t ch = NOKEY;
 	DrawClear();
@@ -101,7 +176,8 @@ uint8_t battery_info() {
 			for (i--; i >= 0; i--) DrawRect(25, 198 - i * 26, 77, 19, col);
 		}
 
-		DrawImgRle(ArrowInfoImg_RLE, ArrowInfoImg_Pal, 238, 212, 72, 21);
+		//DrawImgRle(ArrowInfoImg_RLE, ArrowInfoImg_Pal, 238, 212, 72, 21);
+		DrawImgRle(ArrowImg_RLE, ArrowImg_Pal, 280, 212, 23, 23);
 
 #define DISPX    128
 #define DISPW    (WIDTH-128)
@@ -144,7 +220,8 @@ uint8_t system_info() {
 	// Draws the sensor image to the display.
 	DrawImgRle(SystemInfoImg_RLE, SystemInfoImg_Pal, 3, 0, 59, 240);
 
-	DrawImgRle(ArrowBatteryImg_RLE, ArrowBatteryImg_Pal, 238, 212, 72, 21);
+	//DrawImgRle(ArrowBatteryImg_RLE, ArrowBatteryImg_Pal, 238, 212, 72, 21);
+	DrawImgRle(ArrowImg_RLE, ArrowImg_Pal, 280, 212, 23, 23);
 
 	// set font
 	pDrawFont = FontBold8x8; // font 8x8
@@ -223,21 +300,23 @@ uint8_t show_system_info() {
 	uint8_t ch = NOKEY;
 	uint8_t page = 1;
 
-	while (True) {
-		if (page == 1)
-			ch = battery_info();
-		else
-			ch = system_info();
+    while (True) {
+        if (page == 1)
+            ch = battery_info();
+        else if (page == 2)
+            ch = system_info();
+        else if (page == 3)
+            ch = picopad_pins();
 
-		ch = screensaver_reset_timer(ch);
+        ch = screensaver_reset_timer(ch);
 
-		if (ch == KEY_Y) return RESULT_CANCEL;
-		if (ch == KEY_RIGHT || ch == KEY_LEFT) {
-			if (page == 1) {
-				page = 2;
-			} else {
-				page = 1;
-			}
-		}
-	}
+        if (ch == KEY_Y) return RESULT_CANCEL;
+        if (ch == KEY_RIGHT || ch == KEY_LEFT) {
+            if (page < 3) {
+                page++;
+            } else {
+                page = 1;
+            }
+        }
+    }
 }

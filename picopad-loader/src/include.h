@@ -25,6 +25,9 @@
 #include "img/icons.h"
 #include "img/splash.h"
 #include "img/battery.h"
+#include "img/connector.h"
+#include "img/logo.h"
+#include "img/arrow.h"
 
 #include "sound.h"
 

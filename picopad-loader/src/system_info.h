@@ -26,6 +26,9 @@
 
 #define LOADER_VERSION	"0.51"
 
+#define COL_JUNGLE  RGBTO16(0, 75, 73)
+#define COL_PINK    RGBTO16(195, 40, 106)
+
 #include "pico/unique_id.h"
 
 // Structure to hold memory usage information

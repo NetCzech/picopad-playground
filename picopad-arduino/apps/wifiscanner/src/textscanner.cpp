@@ -59,7 +59,7 @@ void textScanner() {
         ssid[sizeof(ssid) - 1] = '\0';
 
         // Convert rssi to a string
-        snprintf(rssi, sizeof(rssi), "%d dBm", WiFi.RSSI(i));
+        snprintf(rssi, sizeof(rssi), "%d", WiFi.RSSI(i));
 
         // Convert channel to a string
         snprintf(channel, sizeof(channel), "%d", WiFi.channel(i));
@@ -76,6 +76,7 @@ void textScanner() {
         DrawText(String(WiFi.channel(i)).c_str(), 125, 53 + i * 35, COL_WHITE);
         DrawText("RSSI:", 150, 53 + i * 35, COL_WHITE);
         DrawText(String(WiFi.RSSI(i)).c_str(), 250, 53 + i * 35, COL_WHITE);
+        DrawText("dBm", 280, 53 + i * 35, COL_WHITE);
       }
     }
 

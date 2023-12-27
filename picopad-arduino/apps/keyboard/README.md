@@ -1,4 +1,4 @@
-## A simple Wi-Fi scanner for the [Picopad](https://picopad.eu/en/) gaming console.
+## A simple Virtual keyboard for the [Picopad](https://picopad.eu/en/) gaming console.
 
 ---
 
@@ -6,26 +6,43 @@
 >   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/light-theme/info.svg">
 >   <img alt="Info" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/info.svg">
 > </picture><br>
+> &nbsp;
+> &nbsp;
+> &nbsp;
+> 
+> **CONTROL:**
+>> **_Left key:_**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move to the left
 >
-> The program is launched in the graphical version of the scanner. Use the X key to scan available Wi-Fi networks. In the graphical version of the scanner, the scan of Wi-Fi networks is not automatic, but only after pressing the X key.
+>> **_Right key:_**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move to the right
 >
-> Press the B key to switch to the text list of Wi-Fi networks. In this mode, available Wi-Fi networks are scanned automatically after 3 seconds. Press the A key to switch back to graphics mode.
+>> **_Up key:_**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move to the up
 >
-> In both versions of the scanner, pressing the Y key exits the program.
-
-> <picture>
->   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/light-theme/warning.svg">
->   <img alt="Warning" src="https://raw.githubusercontent.com/Mqxx/GitHub-Markdown/main/blockquotes/badge/dark-theme/warning.svg">
-> </picture><br>
+>> **_Down key:_**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move to the down
 >
-> Please DO NOT directly upload the build to Pico / Picopad. The build is specifically designed for the custom bootloader, which will load it from the SD card into flash memory behind the main bootloader. You must upload the contents of the /build directory to an SD card.
+>> **_A key:_**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;insert a letter
 >
-> Please note, the build does NOT include a BOOT2 section. Directly uploading the build to the Picopad / Pico will brick your Pico / Picopad.
->
-> This is an ALPHA VERSION and it's still in the testing phase. Therefore, all operations should be performed at your own risk. 
+>> **_B key:_**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;enter
 
 ---
 
-**Screenshots:**
+**:black_cat: NOTICE :black_cat:**
 
-![Graphic scanner](https://github.com/NetCzech/picopad-playground/blob/78bddd5087dac5d9868feec1f2759aa2368402da/picopad-arduino/apps/wifiscanner/img/graphscanner.png)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Text scanner](https://github.com/NetCzech/picopad-playground/blob/78bddd5087dac5d9868feec1f2759aa2368402da/picopad-arduino/apps/wifiscanner/img/textscanner.png)
+The app is still in development, this is an alpha version
+
+---
+
+TO-DO LIST:
+- [ ] automatic character transition to the next line
+- [ ] keyboard layout for special characters
+- [ ] keyboard layout for accented characters
+
+---
+
+**⚠️ WARNING ⚠️**
+
+Please DO NOT directly upload the build to Pico / Picopad. The build is specifically designed for the custom
+bootloader, which will load it from the SD card into flash memory behind the main bootloader. You must upload the 
+contents of the /build directory to an SD card.
+
+Please note, the build does NOT include a BOOT2 section. Directly uploading the build to the Picopad / Pico will
+brick your Pico / Picopad.

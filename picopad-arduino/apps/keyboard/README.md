@@ -32,8 +32,9 @@ The app is still in development, this is an alpha version
 ---
 
 TO-DO LIST:
-- [ ] automatic character transition to the next line
-- [ ] keyboard layout for special characters
+- [x] automatic character transition to the next line
+- [x] keyboard layout for special characters
+- [x] keyboard layout for smile characters 
 - [ ] keyboard layout for accented characters
 
 ---

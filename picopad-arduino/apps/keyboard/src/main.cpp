@@ -296,7 +296,16 @@ void loop() {
 
     // Set character insertion function
 if (KeyPressed(KEY_A)) {
-    String selectedKey = actShift ? upperLabel[startRow][startCol] : smallLabel[startRow][startCol];
+    String selectedKey;
+    if (actChar) {
+        selectedKey = charLabel[startRow][startCol];
+    } else if (actSmile) {
+        selectedKey = smileLabel[startRow][startCol];
+    } else if (actShift) {
+        selectedKey = upperLabel[startRow][startCol];
+    } else {
+        selectedKey = smallLabel[startRow][startCol];
+    }
 
     int lastNewLine = currentText.lastIndexOf('\n');
     if (lastNewLine == -1) lastNewLine = 0;

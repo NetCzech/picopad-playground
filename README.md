@@ -26,7 +26,7 @@ Please note that this software currently only tested on 8-bit PNG images using a
 
 The code of this generator is based on the original Picopad SDK source code.
 
-- **[Link](https://github.com/NetCzech/picopad-playground/tree/848e8973c58df0e720713a50837a7a9e324ac736/tools/PyPicoPadImg)**
+- **[Link](tools/PyPicoPadImg)**
 
 ### **2. PyConvertLoaderImg**
 
@@ -36,7 +36,7 @@ specifically generates images that are compatible with the Picopad loader applic
 The tool reads image files, provides some basic information about them, downsamples the images by reducing the bit depth
 of each color channel, and saves the resulting image as a 16-bit BMP file.
 
-- **[Link](https://github.com/NetCzech/picopad-playground/tree/848e8973c58df0e720713a50837a7a9e324ac736/tools/PyConvertLoaderImg)**
+- **[Link](tools/PyConvertLoaderImg)**
 
 ### **3. Picopad TFT Display emulator**
 
@@ -46,7 +46,7 @@ display code using the API of the Picopad SDK.
 
 The code of this emulator is based on the original Picopad SDK source code.
 
-- **[Link](https://github.com/NetCzech/picopad-playground/tree/848e8973c58df0e720713a50837a7a9e324ac736/tft-emulator)**
+- **[Link](tools/tft-emulator)**
 
 ### **4. PyRaspPicoSnd**
 
@@ -58,14 +58,14 @@ decoding.
 The generated `.c` output contains the audio data in a compact C++ array format, ready for direct integration into
 your Picopad SDK software projects.
 
-- **[Link](https://github.com/NetCzech/picopad-playground/tree/7eb3603a59dc222b842c06d7e84efb570547e5d6/tools/PyRaspPicoSnd)**
+- **[Link](tools/PyRaspPicoSnd)**
 
 ### **5. Custom Picopad Loader**
 
 Fork of the Picopad SDK, built on the Pico SDK. The goal was to add the capability to use libraries for the Pico SDK
 on the Picopad.
 
-- **[Link](https://github.com/NetCzech/picopad-playground/tree/7eb3603a59dc222b842c06d7e84efb570547e5d6/picopad-loader)**
+- **[Link](picopad-loader)**
 
 ---
 

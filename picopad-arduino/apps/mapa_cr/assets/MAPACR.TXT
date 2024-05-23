@@ -1,0 +1,9 @@
+^YMAPA CR^0
+
+^WUP^0 ...... previous
+^WDOWN^0 .... next
+^WY^0 ....... quit
+
+Credit:
+- pesvklobouku (X nick)
+- laskakit.cz

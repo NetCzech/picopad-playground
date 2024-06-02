@@ -9,7 +9,6 @@
 #include "main.h"
 
 #include "WiFi.h"
-#include "secret.h"
 
 #include <HTTPClient.h>
 #include <ArduinoJson.h>

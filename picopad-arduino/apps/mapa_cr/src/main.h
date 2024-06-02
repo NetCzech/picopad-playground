@@ -6,6 +6,10 @@
 // Include laskakit logo
 #include "img/laskakit.c"
 
+// Wi-Fi credentials
+const char* ssid = "your_ssid";
+const char* password = "your_wifi_password";
+
 // The number of items on the page
 #define itemsPerPage 10
 
@@ -111,7 +115,9 @@ const RGBDescription rgbDescriptions[] = {
     {156, 220, 0, "Déš: +/- 4 mm/h, 32 dBZ"},
     {224, 220, 0, "Silnı déš, +/- 10 mm/h, 40 dBZ"},
     {252, 176, 0, "Silnı déš, +/- 10 mm/h, 40 dBZ"},
-    {252, 132, 0, "Silnı déš, +/- 10 mm/h, 44 dBZ"}
+    {252, 132, 0, "Silnı déš, +/- 10 mm/h, 44 dBZ"},
+    {252, 88, 0, "Velmi silnı dés, +/- 70 mm/h, 48 dBZ"},
+    {252, 0,0, "Velmi silnı déš, +/- 70 mm/h, 48 dBZ"}
 };
 
 const char* getRGBDescription(int r, int g, int b) {
@@ -120,7 +126,7 @@ const char* getRGBDescription(int r, int g, int b) {
             return rgbDescriptions[i].description;
         }
     }
-    return "Víme jen, e prší";
+    return "Neznámá intenzita deštì";
 }
 
 #endif //MAPACR_MAIN_H

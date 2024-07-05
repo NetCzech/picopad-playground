@@ -1,0 +1,9 @@
+^YSNAKE^0
+
+^WUP^0 ......... up
+^WDOWN^0 ....... down
+^WRIGHTUP^0 .... right
+^WLEFT^0 ....... left
+
+^WA^0 .......... pause
+^WY^0 .......... quit

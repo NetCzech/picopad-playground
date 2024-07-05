@@ -1,0 +1,6 @@
+^YWIFI SCANNER^0
+
+Basic Wi-Fi scanner
+
+^WA^0 ....... scan
+^WY^0 ....... quit

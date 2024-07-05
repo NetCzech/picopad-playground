@@ -19,4 +19,4 @@
 
 **Screenshots:**
 
-![Graphic scanner](https://github.com/NetCzech/picopad-playground/blob/78bddd5087dac5d9868feec1f2759aa2368402da/picopad-arduino/apps/wifiscanner/img/graphscanner.png)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Text scanner](https://github.com/NetCzech/picopad-playground/blob/78bddd5087dac5d9868feec1f2759aa2368402da/picopad-arduino/apps/wifiscanner/img/textscanner.png)
+![Graphic scanner](https://github.com/NetCzech/picopad-playground/blob/main/picopad-arduino/apps/wifiscanner/img/graphscanner.png)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![Text scanner](https://github.com/NetCzech/picopad-playground/blob/main/picopad-arduino/apps/wifiscanner/img/textscanner.png)

@@ -156,13 +156,6 @@ void SelFont5x8() {
     DrawFontWidth = 5;
 }
 
-// select font 8x16
-void SelFontCz8x16() {
-    pDrawFont = FontBoldCz8x16;
-    DrawFontHeight = 16;
-    DrawFontWidth = 8;
-}
-
 // draw rectangle
 void DrawRect(int x, int y, int w, int h, u16 col) {
     // limit x

@@ -26,7 +26,6 @@ void SelFont6x8();
 void SelFont8x8(); // default
 void SelFont8x14();
 void SelFont8x16();
-void SelFontCz8x16();
 
 // draw rectangle
 void DrawRect(int x, int y, int w, int h, u16 col);

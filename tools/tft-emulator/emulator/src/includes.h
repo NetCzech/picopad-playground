@@ -19,6 +19,5 @@
 #include "../_font/font_italic_8x8.h"
 #include "../_font/font_thin_8x8.h"
 #include "../_font/font_tiny_5x8.h"
-#include "../_font/font_bold_cz_8x16.c"
 
 #endif //_INCLUDES_H

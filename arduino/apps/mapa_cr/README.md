@@ -14,4 +14,4 @@
 
 **Screenshots:**
 
-![Map of Czech Republic](https://github.com/NetCzech/picopad-playground/blob/main/picopad-arduino/apps/mapa_cr/img/mapacr.png)
+![Map of Czech Republic](img/mapacr.png)

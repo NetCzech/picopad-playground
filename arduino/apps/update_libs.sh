@@ -4,8 +4,10 @@
 for dir in */ ; do
     cd "$dir"
 
-    ./update_libs.sh || exit 1
-	
+    if [ -x update_libs.sh ]; then
+        ./update_libs.sh || exit 1
+    fi
+
     # Go back to the parent directory
     cd ..
 done

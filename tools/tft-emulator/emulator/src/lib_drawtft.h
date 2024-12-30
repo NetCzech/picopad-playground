@@ -51,14 +51,29 @@ void DrawCircle(int x0, int y0, int r, u16 col);
 // Draw text (transparent background)
 void DrawText(const char* text, int x, int y, u16 col);
 
+// Draw text double height (transparent background)
+void DrawTextH(const char* text, int x, int y, u16 col);
+
+// Draw text double width (transparent background)
+void DrawTextW(const char* text, int x, int y, u16 col);
+
 // Draw text double sized (transparent background)
 void DrawText2(const char* text, int x, int y, u16 col);
 
 // Draw text with background
 void DrawTextBg(const char* text, int x, int y, u16 col, u16 bgcol);
 
+// Draw text double height with background
+void DrawTextBgH(const char* text, int x, int y, u16 col, u16 bgcol);
+
+// Draw text double width with background
+void DrawTextBgW(const char* text, int x, int y, u16 col, u16 bgcol);
+
 // Draw text double sized with background
 void DrawTextBg2(const char* text, int x, int y, u16 col, u16 bgcol);
+
+// Draw text quadruple sized with background
+void DrawTextBg4(const char* text, int x, int y, u16 col, u16 bgcol);
 
 // Draw text buffer (size TEXTSIZE)
 void DrawTextBuf(const char* textbuf, u16 col, u16 bgcol);

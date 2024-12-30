@@ -373,6 +373,92 @@ void DrawText(const char *text, int x, int y, u16 col) {
     }
 }
 
+// Draw text double height (transparent background)
+void DrawTextH(const char* text, int x, int y, u16 col) {
+    int x0 = x;
+    int y0 = y;
+    u8 ch;
+    int i, j;
+    const u8* s;
+
+    // loop through characters of text
+    for (;;) {
+        // get next character of the text
+        ch = (u8)*text++;
+        if (ch == 0) break;
+
+        // prepare pointer to font sample
+        s = &pDrawFont[ch];
+
+        // loop through lines of one character
+        y = y0;
+        for (i = DrawFontHeight; i > 0; i--) {
+            // get one font sample
+            ch = *s;
+            s += 256;
+
+            // loop through pixels of one character line
+            x = x0;
+            for (j = DrawFontWidth; j > 0; j--) {
+                // pixel is set
+                if ((ch & 0x80) != 0) {
+                    DrawPoint(x, y, col);       // draw pixel
+                    DrawPoint(x, y + 1, col);  // double height
+                }
+                x++;
+                ch <<= 1;
+            }
+            y += 2; // move down two rows for double height
+        }
+
+        // shift to next character position
+        x0 += DrawFontWidth;
+    }
+}
+
+// Draw text double width (transparent background)
+void DrawTextW(const char* text, int x, int y, u16 col) {
+    int x0 = x;
+    int y0 = y;
+    u8 ch;
+    int i, j;
+    const u8* s;
+
+    // loop through characters of text
+    for (;;) {
+        // get next character of the text
+        ch = (u8)*text++;
+        if (ch == 0) break;
+
+        // prepare pointer to font sample
+        s = &pDrawFont[ch];
+
+        // loop through lines of one character
+        y = y0;
+        for (i = DrawFontHeight; i > 0; i--) {
+            // get one font sample
+            ch = *s;
+            s += 256;
+
+            // loop through pixels of one character line
+            x = x0;
+            for (j = DrawFontWidth; j > 0; j--) {
+                // pixel is set
+                if ((ch & 0x80) != 0) {
+                    DrawPoint(x, y, col);     // draw pixel
+                    DrawPoint(x + 1, y, col); // double width
+                }
+                x += 2; // move right two columns for double width
+                ch <<= 1;
+            }
+            y++; // move to the next row of the character
+        }
+
+        // shift to next character position
+        x0 += DrawFontWidth * 2;
+    }
+}
+
 // Draw text double sized (transparent background)
 void DrawText2(const char *text, int x, int y, u16 col) {
     // prepare
@@ -464,6 +550,94 @@ void DrawTextBg(const char *text, int x, int y, u16 col, u16 bgcol) {
     }
 }
 
+// Draw text double height with background
+void DrawTextBgH(const char* text, int x, int y, u16 col, u16 bgcol) {
+    int x0 = x;
+    int y0 = y;
+    u8 ch;
+    int i, j;
+    const u8* s;
+    u16 c;
+
+    // loop through characters of text
+    for (;;) {
+        // get next character of the text
+        ch = (u8)*text++;
+        if (ch == 0) break;
+
+        // prepare pointer to font sample
+        s = &pDrawFont[ch];
+
+        // loop through lines of one character
+        for (i = 0; i < DrawFontHeight; i++) {
+            // get one font sample
+            u8 line = *s;
+            s += 256;
+
+            // loop through pixels of one character line
+            for (j = 0; j < DrawFontWidth; j++) {
+                // determine color for pixel (foreground or background)
+                c = (line & 0x80) ? col : bgcol;
+
+                // draw each pixel twice vertically for double height
+                DrawPoint(x0 + j, y0 + i * 2, c);
+                DrawPoint(x0 + j, y0 + i * 2 + 1, c);
+
+                // shift to next pixel in the line
+                line <<= 1;
+            }
+        }
+
+        // shift to next character position
+        x0 += DrawFontWidth;
+    }
+}
+
+
+// Draw text double width with background
+void DrawTextBgW(const char* text, int x, int y, u16 col, u16 bgcol) {
+    int x0 = x;
+    int y0 = y;
+    u8 ch;
+    int i, j;
+    const u8* s;
+    u16 c;
+
+    // loop through characters of text
+    for (;;) {
+        // get next character of the text
+        ch = (u8)*text++;
+        if (ch == 0) break;
+
+        // prepare pointer to font sample
+        s = &pDrawFont[ch];
+
+        // loop through lines of one character
+        for (i = 0; i < DrawFontHeight; i++) {
+            // get one font sample
+            u8 line = *s;
+            s += 256;
+
+            // loop through pixels of one character line
+            for (j = 0; j < DrawFontWidth; j++) {
+                // determine color for pixel (foreground or background)
+                c = (line & 0x80) ? col : bgcol;
+
+                // draw each pixel twice horizontally for double width
+                DrawPoint(x0 + j * 2, y0 + i, c);
+                DrawPoint(x0 + j * 2 + 1, y0 + i, c);
+
+                // shift to next pixel in the line
+                line <<= 1;
+            }
+        }
+
+        // shift to next character position
+        x0 += DrawFontWidth * 2;
+    }
+}
+
+
 // Draw text double sized with background
 void DrawTextBg2(const char *text, int x, int y, u16 col, u16 bgcol) {
     // prepare
@@ -512,6 +686,53 @@ void DrawTextBg2(const char *text, int x, int y, u16 col, u16 bgcol) {
         x0 += DrawFontWidth * 2;
     }
 }
+
+// Draw text quadruple sized with background
+void DrawTextBg4(const char* text, int x, int y, u16 col, u16 bgcol) {
+    int x0 = x;
+    int y0 = y;
+    u8 ch;
+    int i, j, k, l;
+    const u8* s;
+    u16 c;
+
+    // loop through characters of text
+    for (;;) {
+        // get next character of the text
+        ch = (u8)*text++;
+        if (ch == 0) break;
+
+        // prepare pointer to font sample
+        s = &pDrawFont[ch];
+
+        // loop through lines of one character
+        for (i = 0; i < DrawFontHeight; i++) {
+            // get one font sample
+            u8 line = *s;
+            s += 256;
+
+            // loop through pixels of one character line
+            for (j = 0; j < DrawFontWidth; j++) {
+                // determine color for pixel (foreground or background)
+                c = (line & 0x80) ? col : bgcol;
+
+                // draw each pixel four times (2x2 block)
+                for (k = 0; k < 2; k++) {
+                    for (l = 0; l < 2; l++) {
+                        DrawPoint(x0 + j * 4 + k, y0 + i * 4 + l, c);
+                    }
+                }
+
+                // shift to next pixel in the line
+                line <<= 1;
+            }
+        }
+
+        // shift to next character position
+        x0 += DrawFontWidth * 4;
+    }
+}
+
 
 // Draw text buffer (size TEXTSIZE)
 void DrawTextBuf(const char *textbuf, u16 col, u16 bgcol) {

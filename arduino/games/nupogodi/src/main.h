@@ -8,6 +8,7 @@
 #define _MAIN_H
 
 // Image files
+#include "img/intro.h"
 #include "img/background.h"
 #include "img/leftTop.h"
 #include "img/leftBottom.h"
@@ -19,5 +20,6 @@
 #include "img/leftChick.h"
 #include "img/rightChick.h"
 #include "img/minusLife.h"
+#include "img/score.h"
 
 #endif // _MAIN_H

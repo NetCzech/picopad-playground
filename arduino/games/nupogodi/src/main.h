@@ -21,5 +21,7 @@
 #include "img/rightChick.h"
 #include "img/minusLife.h"
 #include "img/score.h"
+#include "img/rabbitTop.h"
+#include "img/rabbitBottom.h"
 
 #endif // _MAIN_H

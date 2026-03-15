@@ -9,21 +9,69 @@
 #include "main.h"
 #include <stdlib.h>
 
-struct Point {
-    int x, y;
-};
+// Povolení debug výpisů
+//#define DEBUG
 
-// Nastavení hry
+// Herní konstanty
+const int MAX_LIVES = 3;                                // počet životů
+const int MAX_SCORE = 999;                              // max. skóre
+const int MAX_PENALTIES = MAX_LIVES * 2;                // počet trestných bodů
+const int SEC_EGG_THRESHOLD = 10;                       // počet vajec, po kterých padají dvě vejce současně
+
+const unsigned long EGG_MOVE_BASE = 800;                // počáteční rychlost hry
+const unsigned long EGG_MOVE_SPEEDUP = 5;               // zrychlení hry
+const unsigned long EGG_MOVE_MIN = 400;                 // max. rychlost hry
+
+const unsigned long EGG_SPAWN_BASE = 4000;              // interval generování vajec na počátku hry
+const long EGG_SPAWN_SPEEDUP = 25;                      // časový úbytek intervalu mezi generováním vajec
+const long EGG_SPAWN_MIN = 800;                         // nejkratší možný inteval mezi generováním vajec
+
+const unsigned long RABBIT_MIN_INTERVAL = 5000;         // minimální interval mezi zobrazováním zajíce
+const unsigned long RABBIT_MAX_INTERVAL = 15000;        // maximální interval mezi zobrazováním zajíce
+const unsigned long RABBIT_SHOW_DURATION = 1000;        // doba zobrazení zajíce
+const unsigned long RABBIT_ANIM_SPEED = 250;            // rychlost animace
+
+const int FORGIVE_FIRST = 200;                          // odpuštění trestných bodů po dosažení skóre 200
+const int FORGIVE_SECOND = 500;                         // odpuštění trestných bodů po dosažení skóre 500
+
+const int BROKENEGG_CHICK_DELAY= 350;                   // interval mezi zobrazením rozbitého vajíčka a kuřátka
+const unsigned long GAME_OVER_DELAY = 3000;             // doba zobrazení GAME OVER obrazovky
+
+// Herní proměnné
 int totalEggs = 0;
 int caughtEggs = 0;
-int lives = 3;
+int penalties = 0;
+
 bool gameOver = false;
+bool forgiveFirstDone = false;
+bool forgiveSecondDone = false;
+bool rabbitVisible = false;
+
+unsigned long rabbitShowTime = 0;
+unsigned long rabbitNextAppear = 0;
+
+// Herní stavy
+bool showBrokenEgg = false;                             // stav pro zobrazení rozbitého vajíčka
+bool showChick = false;                                 // stav pro zobrazení kuřátka
 
 enum GameState { STATE_INTRO, STATE_PLAYING, STATE_SCORE };
 GameState gameState = STATE_INTRO;
 
 enum WolfState { LEFT_BOTTOM, RIGHT_BOTTOM, LEFT_TOP, RIGHT_TOP };
 WolfState wolfState = LEFT_TOP;
+
+// Herní časovače
+unsigned long lastMoveTime = 0;                         // poslední čas pohybu vajíčka
+unsigned long brokenEggStartTime = 0;                   // čas, kdy se začalo zobrazovat rozbité vajíčko
+unsigned long secondaryEggLastMoveTime = 0;             // poslední čas pohybu druhého vajíčka
+unsigned long chickStartTime = 0;                       // čas, kdy se začalo zobrazovat kuřátko
+unsigned long lastEggSpawnTime = 0;                     // čas posledního generování vajíčka
+unsigned long eggMoveDuration = EGG_MOVE_BASE;          // čas mezi posuny vajíčka v ms (rychlost padání vajec)
+unsigned long gameOverTime = 0;                         // čas, kdy nastal stav Game Over
+
+struct Point {
+    int x, y;
+};
 
 #define SCORE_FILE "nupogodi.cfg"
 int highScore[4] = {0, 0, 0, 0};
@@ -33,8 +81,6 @@ struct FallingEgg {
     const Point* path;
     int pathIndex;
     bool active;
-    bool broken;
-    bool isLeft;
 };
 
 FallingEgg fallingEgg;
@@ -47,33 +93,17 @@ const Point rightTopPath[4] = {{290, 79}, {280, 85}, {270, 91}, {255, 100}};
 const Point rightBottomPath[4] = {{290, 126}, {280, 132}, {270, 138}, {255, 147}};
 
 const Point* allPaths[4] = {leftTopPath, leftBottomPath, rightTopPath, rightBottomPath};
-
-// Časovače
-unsigned long lastMoveTime = 0; // Poslední čas pohybu vajíčka
-unsigned long brokenEggStartTime = 0; // Čas, kdy se začalo zobrazovat rozbité vajíčko
-unsigned long secondaryEggLastMoveTime = 0; // Poslední čas pohybu druhého vajíčka
-unsigned long chickStartTime = 0; // Čas, kdy se začalo zobrazovat kuřátko
-unsigned long lastEggSpawnTime = 0; // čas posledního generování vajíčka
-unsigned long eggMoveDuration = 800; // Čas mezi posuny vajíčka v ms (rychlost padání vajec)
-unsigned long gameOverTime = 0; // Čas, kdy nastal stav Game Over
-
-// Stavy
-bool showBrokenEgg = false; // Stav pro zobrazení rozbitého vajíčka
-bool showChick = false; // Stav pro zobrazení kuřátka
-int transitionDelay = 350; // Pauza mezi zobrazením rozbitého vajíčka a kuřátka
+const Point* lastBrokenEggPath = nullptr;
 
 // Načtení skóre z SD karty
 void loadScore() {
-    // Ujisti se, že je disk připojený
     if (!sd_mount()) {
-        // SD není dostupná → necháme default 0,0,0,0
         highScore[0] = highScore[1] = highScore[2] = highScore[3]= 0;
         return;
     }
 
     FIL file;
     
-    // Pokud soubor neexistuje, vytvoříme ho s nulami
     if (!file_exist(SCORE_FILE)) {
         if (file_create(&file, SCORE_FILE)) {
             file_write(&file, highScore, sizeof(highScore));
@@ -82,18 +112,15 @@ void loadScore() {
         return;
     }
 
-    // Soubor existuje → otevřít a přečíst
     if (!file_open(&file, SCORE_FILE, FA_READ)) {
-        // Nelze otevřít → necháme 0,0,0,0
         highScore[0] = highScore[1] = highScore[2] = highScore[3]= 0;
         return;
     }
 
-    u32 readBytes = file_read(&file, highScore, sizeof(highScore));
+    int readBytes = file_read(&file, highScore, sizeof(highScore));
     file_close(&file);
 
-    // Pokud velikost nesedí, raději reset
-    if (readBytes != sizeof(highScore)) {
+    if (readBytes != (int)sizeof(highScore)) {
         highScore[0] = highScore[1] = highScore[2] = highScore[3]= 0;
     }
 }
@@ -104,7 +131,6 @@ void saveScore() {
 
     FIL file;
 
-    // Přepíšeme soubor novým obsahem
     if (!file_create(&file, SCORE_FILE)) return;
 
     file_write(&file, highScore, sizeof(highScore));
@@ -113,8 +139,7 @@ void saveScore() {
 
 // Aktualizace pole skóre
 void updateScore(int newScore) {
-    // 0 = nejlepší, 1 = druhé, 2 = třetí, 3 = čtvrté
-    if (newScore > highScore[0]) {
+    if (newScore > highScore[0]) {                      // 0 = nejlepší, 1 = druhé, 2 = třetí, 3 = čtvrté
         highScore[3] = highScore[2];
         highScore[2] = highScore[1];
         highScore[1] = highScore[0];
@@ -135,7 +160,6 @@ void updateScore(int newScore) {
 void initFallingEgg(FallingEgg &egg, bool isSecondary = false) {
     if (gameOver) return;
     egg.active = true;
-    egg.broken = false;
     if (!isSecondary) {
         showBrokenEgg = false;
         showChick = false;
@@ -145,13 +169,19 @@ void initFallingEgg(FallingEgg &egg, bool isSecondary = false) {
     // Nastavení náhodné dráhy
     int randomPath = random (0, 4);
     egg.path = allPaths[randomPath];
-    egg.isLeft = (randomPath == 0 || randomPath == 1);
     if (!isSecondary) {
         lastMoveTime = millis();
+        
+        #ifdef DEBUG
         Serial.println("New egg initialized");
+        #endif
+
     } else {
         secondaryEggLastMoveTime = millis();
+        
+        #ifdef DEBUG
         Serial.println("Secondary egg initialized");
+        #endif
     }
 }
 
@@ -159,49 +189,49 @@ void initFallingEgg(FallingEgg &egg, bool isSecondary = false) {
 void startGame() {
     totalEggs = 0;
     caughtEggs = 0;
-    lives = 3;
-    gameOver = false;
+    penalties = 0;
+    
+    lastBrokenEggPath = nullptr;
 
-    fallingEgg.active = false;
-    fallingEgg.broken = false;
-    fallingEgg.isLeft = false;
-    fallingEgg.pathIndex = 0;
+    forgiveFirstDone = false;
+    forgiveSecondDone = false;
 
     secondaryEgg.active = false;
-    secondaryEgg.broken = false;
-    secondaryEgg.isLeft = false;
     secondaryEgg.pathIndex = 0;
+    secondaryEggLastMoveTime = millis();
+    eggMoveDuration = EGG_MOVE_BASE;
 
     showBrokenEgg = false;
     brokenEggStartTime = 0;
+
     showChick = false;
     chickStartTime = 0;
 
-    wolfState = LEFT_TOP;
+    rabbitVisible = false;
+    rabbitShowTime = 0;
+    rabbitNextAppear = millis() + random(RABBIT_MIN_INTERVAL, RABBIT_MAX_INTERVAL);
 
-    lastMoveTime = millis();
-    secondaryEggLastMoveTime = millis();
-    lastEggSpawnTime = millis();
-    eggMoveDuration = 800; // počáteční rychlost hry
-    
     initFallingEgg(fallingEgg);
     lastEggSpawnTime = millis();
+    lastMoveTime = millis();
     
-    gameState = STATE_PLAYING; // přepnout ze zobrazení intra do hry
+    wolfState = LEFT_TOP;
+    
+    gameState = STATE_PLAYING;
+    gameOver = false;
 }
 
 // Rychlost generování vajec
 unsigned long getEggInterval() {
-    unsigned long baseInterval = 4000; // interval začátku hry
-    long interval = (long)baseInterval - (totalEggs * 25); // každé vejce zkrátí čas o 30 ms
-    if (interval < 800) interval = 800; // maximální rychlost hry
+    long interval = (long)EGG_SPAWN_BASE - (totalEggs * EGG_SPAWN_SPEEDUP);
+    if (interval < EGG_SPAWN_MIN) interval = EGG_SPAWN_MIN;
     return (unsigned long)interval;
 }
 
 // Zrychlování padání vajec podle počtu generovaných vajec
 void increaseSpeed() {
-    if (eggMoveDuration > 400) { // nejrychlejší pád = 400 ms
-        eggMoveDuration -= 5; // každé vejce zrychlí pád o 5 ms
+    if (eggMoveDuration > EGG_MOVE_MIN) {
+        eggMoveDuration -= EGG_MOVE_SPEEDUP;
     }
 }
 
@@ -215,22 +245,51 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
             if ((egg.path == leftTopPath && wolfState == LEFT_TOP) || 
                 (egg.path == leftBottomPath && wolfState == LEFT_BOTTOM) || 
                 (egg.path == rightTopPath && wolfState == RIGHT_TOP) || 
-                (egg.path == rightBottomPath && wolfState == RIGHT_BOTTOM)) { // Pokud je vlk ve správné pozici
-                // Vlk chytil vejce -> zvýšení počtu chycených vajec
+                (egg.path == rightBottomPath && wolfState == RIGHT_BOTTOM)) {
                 caughtEggs++;
+                if (caughtEggs > MAX_SCORE) caughtEggs = MAX_SCORE;
+
+                if (caughtEggs >= FORGIVE_FIRST && !forgiveFirstDone) {
+                    forgiveFirstDone = true;
+                    penalties = 0;
+                }
+                if (caughtEggs >= FORGIVE_SECOND && !forgiveSecondDone) {
+                    forgiveSecondDone = true;
+                    penalties = 0;
+                }
+                if (rabbitVisible && penalties > 0) {
+                    penalties--;
+                }
+
+                #ifdef DEBUG
                 Serial.println("Egg caught");
+                #endif
+
             } else {
-                // Vlk nechytil vejce -> odečtení životu nebo konec hry
-                egg.broken = true;
+                lastBrokenEggPath = egg.path;
                 brokenEggStartTime = millis();
                 showBrokenEgg = true;
                 showChick = false;
-                lives--;
+                if (penalties % 2 == 1) {
+                    penalties += 1;
+                } else {
+                    penalties += 2;
+                }
+                
+                #ifdef DEBUG
                 Serial.println("Egg broken");
-                if (lives <= 0 && !gameOver) {
+                #endif
+
+                if (penalties >= MAX_PENALTIES && !gameOver) {
                     gameOver = true;
                     gameOverTime = millis();
+                    fallingEgg.active = false;
+                    secondaryEgg.active = false;
+                    
+                    #ifdef DEBUG
                     Serial.println("Game Over");
+                    #endif
+
                     updateScore(caughtEggs);
                     saveScore();
                 }
@@ -246,13 +305,13 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
 void createEgg() {
     unsigned long currentTime = millis();
     unsigned long eggInterval = getEggInterval();
-    // Pokud uplynul čas od posledního generování
+
     if ((currentTime - lastEggSpawnTime >= eggInterval) && !fallingEgg.active && !gameOver) {
         initFallingEgg(fallingEgg);
         lastEggSpawnTime = currentTime;
     }
-    // Po 10 bodech aktivuj druhé vejce
-    if (caughtEggs >= 10 && !secondaryEgg.active && !gameOver) {
+
+    if (caughtEggs >= SEC_EGG_THRESHOLD && !secondaryEgg.active && !gameOver) {
         if (currentTime - lastEggSpawnTime >= eggInterval / 2) {
             initFallingEgg(secondaryEgg, true);
         }
@@ -261,9 +320,7 @@ void createEgg() {
 
 // Vykreslení úvodní obrazovky
 void drawIntroScreen() {
-    DrawClear();
     DrawImgRle(intro, intro_Pal, 0, 0, 320, 240);
-
     SelFont8x16();
 
     DrawText("A", 13, 223, COL_SAFFRONGOLD);
@@ -282,9 +339,9 @@ void drawIntroScreen() {
 }
 
 void drawScoreScreen () {
-    DrawClear();
-    DrawImgRle (score, score_Pal, 0, 0, 320, 240);
+    char buf[16];
 
+    DrawImgRle (score, score_Pal, 0, 0, 320, 240);
     SelFont8x16();
 
     DrawText("A", 13, 223, COL_SAFFRONGOLD);
@@ -295,9 +352,6 @@ void drawScoreScreen () {
 
     DrawText("Y", 251, 223, COL_SAFFRONGOLD);
     DrawText("Exit", 275, 223, COL_SAFFRONGOLD);
-
-    SelFont8x16();
-    char buf[16];
 
     DrawText("1.", 13, 195, COL_SAFFRONGOLD);
     snprintf(buf, sizeof(buf), "%03d", highScore[0]);
@@ -328,6 +382,20 @@ void drawWolf() {
         DrawImgRle(leftTop, leftTop_Pal, 60, 100, 98, 104);
     } else if (wolfState == RIGHT_TOP) {
         DrawImgRle(rightTop, rightTop_Pal, 163, 100, 98, 104);
+    }
+}
+
+// Vykreslí zajíce
+void drawRabbit() {
+    if (rabbitVisible) {
+        unsigned long elapsed = millis() - rabbitShowTime;
+        int frame = elapsed / RABBIT_ANIM_SPEED;
+        
+        if (frame % 2 == 0) {
+            DrawImgRle(rabbitTop, rabbitTop_Pal, 0, 0, 82, 83);
+        } else {
+            DrawImgRle(rabbitBottom, rabbitBottom_Pal, 0, 0, 74, 83);
+        }
     }
 }
 
@@ -363,9 +431,16 @@ void drawChick(bool isLeft) {
 
 // Vykreslení životů
 void drawLives() {
-    for (int i = 0; i < 3; i++) {
-        if (i < 3 - lives) {
-            DrawImgRle(minusLife, minusLife_Pal, 195 + i * 20, 30, 20, 20);
+    int fullIcons = penalties / 2;
+    bool halfIcon = (penalties % 2);
+    
+    for (int i = 0; i < fullIcons && i < MAX_LIVES; i++) {                                  // Neblikající ikona (celý život)
+        DrawImgRle(minusLife, minusLife_Pal, 195 + i * 20, 30, 20, 20);
+    }
+    
+    if (halfIcon && fullIcons < MAX_LIVES) {                                                // Blikající ikona (1/2 života)
+        if ((millis() / 250) % 2) {
+            DrawImgRle(minusLife, minusLife_Pal, 195 + fullIcons * 20, 30, 20, 20);
         }
     }
 }
@@ -378,7 +453,7 @@ void drawGameOver() {
 
 // Vykreslení aktuálního skóre
 void drawScore() {
-    char scoreText[20];
+    char scoreText[8];
     SelFont8x8();
     snprintf(scoreText, sizeof(scoreText), "%03d", caughtEggs);
     DrawText2(scoreText, 200, 10, COL_BLACK);
@@ -386,19 +461,24 @@ void drawScore() {
 
 // Vykreslení scény
 void drawScene() {
-    DrawClear();
     DrawImgRle(Background, Background_Pal, 0, 0, 320, 240);
+    drawRabbit();
     drawWolf();
     drawFallingEgg(fallingEgg);
     drawFallingEgg(secondaryEgg);
-    if (showBrokenEgg) {
-        drawBrokenEgg(fallingEgg.isLeft);
+    
+    if (showBrokenEgg && lastBrokenEggPath != nullptr) {
+        bool isLeft = (lastBrokenEggPath == leftTopPath || lastBrokenEggPath == leftBottomPath);
+        drawBrokenEgg(isLeft);
     }
-    if (showChick) {
-        drawChick(fallingEgg.isLeft);
+    if (showChick && lastBrokenEggPath != nullptr) {
+        bool isLeft = (lastBrokenEggPath == leftTopPath || lastBrokenEggPath == leftBottomPath);
+        drawChick(isLeft);
     }
+    
     drawScore();
     drawLives();
+    
     if (gameOver) {
         drawGameOver();
     }
@@ -407,7 +487,10 @@ void drawScene() {
 
 void setup() {
     device_init();
+    
+    #ifdef DEBUG
     Serial.begin(9600);
+    #endif
  
     randomSeed(millis());
     gameState = STATE_INTRO;
@@ -421,8 +504,7 @@ void setup() {
 
 void loop() {
     char ch = KeyGet();
-    
-    // Zpět / ukončení hry
+  
     if (ch == KEY_Y) {
         if (gameState == STATE_INTRO) {
             reset_to_boot_loader();
@@ -440,30 +522,23 @@ void loop() {
         }
     }
 
-        // Intro
-        if (gameState == STATE_INTRO) {
-            if (ch == KEY_A) {
-            startGame();    
-        } else if (ch == KEY_X) {
-            gameState = STATE_SCORE;
-            drawScoreScreen();
-        } else {
-            drawIntroScreen();
-        }
-        return;
-        }
-
-    // Score
-    if (gameState == STATE_SCORE) {
+    if (gameState == STATE_INTRO) {
         if (ch == KEY_A) {
             startGame();
-        } else {
+        } else if (ch == KEY_X) {
+            gameState = STATE_SCORE;
             drawScoreScreen();
         }
         return;
     }
 
-    // Hra (ovládání vlka)
+    if (gameState == STATE_SCORE) {
+        if (ch == KEY_A) {
+            startGame();
+        }
+        return;
+    }
+
     if (!gameOver) {
         if (ch == KEY_LEFT) {
             if (wolfState == RIGHT_TOP) {
@@ -492,9 +567,8 @@ void loop() {
         }
     }
 
-    // Stav hry Game Over
     if (gameOver) {
-        if (millis() - gameOverTime >= 3000) { // 3 vteřinová pauza mezi GameOver a Intro
+        if (millis() - gameOverTime >= GAME_OVER_DELAY) {
             gameState = STATE_INTRO;
             gameOver = false;
             drawIntroScreen();
@@ -504,18 +578,27 @@ void loop() {
         return;
     }
 
-    // Aktualizace pohybu vajec
     updateFallingEgg(fallingEgg, lastMoveTime, eggMoveDuration);
     updateFallingEgg(secondaryEgg, secondaryEggLastMoveTime, eggMoveDuration);
 
-    // Aktualizace stavu rozbitého vajíčka a kuřátka
-    if (showBrokenEgg && (millis() - brokenEggStartTime > transitionDelay)) {
+    if (showBrokenEgg && (millis() - brokenEggStartTime > BROKENEGG_CHICK_DELAY)) {
         showBrokenEgg = false;
         showChick = true;
         chickStartTime = millis();
     }
-    if (showChick && (millis() - chickStartTime > transitionDelay)) {
+    if (showChick && (millis() - chickStartTime > BROKENEGG_CHICK_DELAY)) {
         showChick = false;
+    }
+
+    if (!gameOver) {
+        if (!rabbitVisible && millis() >= rabbitNextAppear) {
+            rabbitVisible = true;
+            rabbitShowTime = millis();
+        }
+        if (rabbitVisible && millis() - rabbitShowTime >= RABBIT_SHOW_DURATION) {
+            rabbitVisible = false;
+            rabbitNextAppear = millis() + random(RABBIT_MIN_INTERVAL, RABBIT_MAX_INTERVAL);
+        }
     }
 
     createEgg();

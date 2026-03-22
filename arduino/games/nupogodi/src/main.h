@@ -24,4 +24,10 @@
 #include "img/rabbitTop.h"
 #include "img/rabbitBottom.h"
 
+// Sound files
+#include "snd/eggSnd.h"
+#include "snd/collectSnd.h"
+#include "snd/lifeDownSnd.h"
+#include "snd/gameOverSnd.h"
+
 #endif // _MAIN_H

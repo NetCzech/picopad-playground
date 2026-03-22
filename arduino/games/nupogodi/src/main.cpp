@@ -160,6 +160,7 @@ void updateScore(int newScore) {
 void initFallingEgg(FallingEgg &egg, bool isSecondary = false) {
     if (gameOver) return;
     egg.active = true;
+    PLAYSOUND(eggSnd);
     if (!isSecondary) {
         showBrokenEgg = false;
         showChick = false;
@@ -241,6 +242,7 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
     if (egg.active && currentTime - lastMoveTime > MoveDuration) {
         lastMoveTime = currentTime;
         egg.pathIndex++;
+        PLAYSOUND(eggSnd);
         if (egg.pathIndex >= 4) {
             if ((egg.path == leftTopPath && wolfState == LEFT_TOP) || 
                 (egg.path == leftBottomPath && wolfState == LEFT_BOTTOM) || 
@@ -248,6 +250,7 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
                 (egg.path == rightBottomPath && wolfState == RIGHT_BOTTOM)) {
                 caughtEggs++;
                 if (caughtEggs > MAX_SCORE) caughtEggs = MAX_SCORE;
+                PLAYSOUND(collectSnd);
 
                 if (caughtEggs >= FORGIVE_FIRST && !forgiveFirstDone) {
                     forgiveFirstDone = true;
@@ -270,6 +273,7 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
                 brokenEggStartTime = millis();
                 showBrokenEgg = true;
                 showChick = false;
+                PLAYSOUND(lifeDownSnd);
                 if (penalties % 2 == 1) {
                     penalties += 1;
                 } else {
@@ -283,6 +287,7 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
                 if (penalties >= MAX_PENALTIES && !gameOver) {
                     gameOver = true;
                     gameOverTime = millis();
+                    PLAYSOUND(gameOverSnd);
                     fallingEgg.active = false;
                     secondaryEgg.active = false;
                     

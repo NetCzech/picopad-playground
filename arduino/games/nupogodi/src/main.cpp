@@ -501,7 +501,6 @@ void setup() {
     gameState = STATE_INTRO;
  
     drawIntroScreen();
- 
     sd_init();
     sd_mount();
     loadScore();

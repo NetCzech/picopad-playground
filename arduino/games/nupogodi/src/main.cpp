@@ -16,15 +16,17 @@
 const int MAX_LIVES = 3;                                // počet životů
 const int MAX_SCORE = 999;                              // max. skóre
 const int MAX_PENALTIES = MAX_LIVES * 2;                // počet trestných bodů
-const int SEC_EGG_THRESHOLD = 10;                       // počet vajec, po kterých padají dvě vejce současně
+const int EGG_THRESHOLD_2 = 15;                         // počet vajec, po kterých dojde k navýšení aktivních drah na 2 (Mode A, Mode B)
+const int EGG_THRESHOLD_3 = 30;                         // počet vajec, po kterých dojde k navýšení aktivních drah na 3 (Mode A, Mode B)
+const int EGG_THRESHOLD_4 = 50;                         // počet vajec, po kterých dojde k navýšení aktivních drah na 4 (Mode B)
 
-const unsigned long EGG_MOVE_BASE = 800;                // počáteční rychlost hry
-const unsigned long EGG_MOVE_SPEEDUP = 5;               // zrychlení hry
-const unsigned long EGG_MOVE_MIN = 400;                 // max. rychlost hry
+const unsigned long EGG_MOVE_BASE = 900;                // počáteční rychlost hry
+const unsigned long EGG_MOVE_SPEEDUP = 3;               // zrychlení hry po každém chyceném vajíčku
+const unsigned long EGG_MOVE_MIN = 600;                 // max. rychlost hry
 
 const unsigned long EGG_SPAWN_BASE = 4000;              // interval generování vajec na počátku hry
-const long EGG_SPAWN_SPEEDUP = 25;                      // časový úbytek intervalu mezi generováním vajec
-const long EGG_SPAWN_MIN = 800;                         // nejkratší možný inteval mezi generováním vajec
+const long EGG_SPAWN_SPEEDUP = 10;                      // intervalu mezi generováním vajec po každém generovaném vejci
+const long EGG_SPAWN_MIN = 1200;                        // nejkratší možný inteval mezi generováním vajec
 
 const unsigned long RABBIT_MIN_INTERVAL = 5000;         // minimální interval mezi zobrazováním zajíce
 const unsigned long RABBIT_MAX_INTERVAL = 15000;        // maximální interval mezi zobrazováním zajíce
@@ -61,9 +63,7 @@ enum WolfState { LEFT_BOTTOM, RIGHT_BOTTOM, LEFT_TOP, RIGHT_TOP };
 WolfState wolfState = LEFT_TOP;
 
 // Herní časovače
-unsigned long lastMoveTime = 0;                         // poslední čas pohybu vajíčka
 unsigned long brokenEggStartTime = 0;                   // čas, kdy se začalo zobrazovat rozbité vajíčko
-unsigned long secondaryEggLastMoveTime = 0;             // poslední čas pohybu druhého vajíčka
 unsigned long chickStartTime = 0;                       // čas, kdy se začalo zobrazovat kuřátko
 unsigned long lastEggSpawnTime = 0;                     // čas posledního generování vajíčka
 unsigned long eggMoveDuration = EGG_MOVE_BASE;          // čas mezi posuny vajíčka v ms (rychlost padání vajec)
@@ -76,15 +76,19 @@ struct Point {
 #define SCORE_FILE "nupogodi.cfg"
 int highScore[4] = {0, 0, 0, 0};
 
+enum GameMode { MODE_A, MODE_B };
+GameMode gameMode = MODE_A;
+
 // Struktura pro padající vajíčko
 struct FallingEgg {
     const Point* path;
     int pathIndex;
     bool active;
+    unsigned long lastMoveTime;
 };
 
-FallingEgg fallingEgg;
-FallingEgg secondaryEgg;
+const int MAX_EGGS = 4;
+FallingEgg eggs[MAX_EGGS];
 
 // Definování drah pro vajíčka
 const Point leftTopPath[4] = {{20, 79}, {30, 85}, {40, 91}, {55, 100}};
@@ -157,37 +161,43 @@ void updateScore(int newScore) {
 }
 
 // Inicializace vajíčka
-void initFallingEgg(FallingEgg &egg, bool isSecondary = false) {
+void initFallingEgg(FallingEgg &egg) {
     if (gameOver) return;
+
+    // Výběr neobsazené dráhy
+    bool used[4] = {false, false, false, false};
+    for (int i = 0; i < MAX_EGGS; i++) {
+        if (eggs[i].active) {
+            for (int p = 0; p < 4; p++) {
+                if (eggs[i].path == allPaths[p]) used[p] = true;
+            }
+        }
+    }
+    
+    int free[4];
+    int freeCount = 0;
+    for (int p = 0; p < 4; p++) {
+        if (!used[p]) free[freeCount++] = p;
+    }
+    
+    if (freeCount == 0) return;
+
+    // Aktivace až po úspěšném výběru
     egg.active = true;
-    PLAYSOUND(eggSnd);
-    if (!isSecondary) {
-        showBrokenEgg = false;
-        showChick = false;
-    }
     egg.pathIndex = 0;
+    egg.lastMoveTime = millis();
+    egg.path = allPaths[free[random(0, freeCount)]];
+    PLAYSOUND(eggSnd);
 
-    // Nastavení náhodné dráhy
-    int randomPath = random (0, 4);
-    egg.path = allPaths[randomPath];
-    if (!isSecondary) {
-        lastMoveTime = millis();
-        
-        #ifdef DEBUG
-        Serial.println("New egg initialized");
-        #endif
-
-    } else {
-        secondaryEggLastMoveTime = millis();
-        
-        #ifdef DEBUG
-        Serial.println("Secondary egg initialized");
-        #endif
-    }
+    #ifdef DEBUG
+    Serial.println("Egg initialized");
+    #endif
 }
 
 // Start hry
-void startGame() {
+void startGame(GameMode mode) {
+    gameMode = mode;
+
     totalEggs = 0;
     caughtEggs = 0;
     penalties = 0;
@@ -197,9 +207,6 @@ void startGame() {
     forgiveFirstDone = false;
     forgiveSecondDone = false;
 
-    secondaryEgg.active = false;
-    secondaryEgg.pathIndex = 0;
-    secondaryEggLastMoveTime = millis();
     eggMoveDuration = EGG_MOVE_BASE;
 
     showBrokenEgg = false;
@@ -212,12 +219,17 @@ void startGame() {
     rabbitShowTime = 0;
     rabbitNextAppear = millis() + random(RABBIT_MIN_INTERVAL, RABBIT_MAX_INTERVAL);
 
-    initFallingEgg(fallingEgg);
-    lastEggSpawnTime = millis();
-    lastMoveTime = millis();
-    
     wolfState = LEFT_TOP;
+
+    for (int i = 0; i < MAX_EGGS; i++) {
+        eggs[i].active = false;
+        eggs[i].pathIndex = 0;
+        eggs[i].lastMoveTime = 0;
+    }
     
+    initFallingEgg(eggs[0]);
+    lastEggSpawnTime = millis();
+
     gameState = STATE_PLAYING;
     gameOver = false;
 }
@@ -237,10 +249,10 @@ void increaseSpeed() {
 }
 
 // Aktualizace pozice vajíčka
-void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned long MoveDuration) {
+void updateFallingEgg(FallingEgg &egg, unsigned long MoveDuration) {
     unsigned long currentTime = millis();
-    if (egg.active && currentTime - lastMoveTime > MoveDuration) {
-        lastMoveTime = currentTime;
+    if (egg.active && currentTime - egg.lastMoveTime > MoveDuration) {
+        egg.lastMoveTime = currentTime;
         egg.pathIndex++;
         PLAYSOUND(eggSnd);
         if (egg.pathIndex >= 4) {
@@ -288,8 +300,7 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
                     gameOver = true;
                     gameOverTime = millis();
                     PLAYSOUND(gameOverSnd);
-                    fallingEgg.active = false;
-                    secondaryEgg.active = false;
+                    for (int i = 0; i < MAX_EGGS; i++) eggs[i].active = false;
                     
                     #ifdef DEBUG
                     Serial.println("Game Over");
@@ -310,15 +321,28 @@ void updateFallingEgg(FallingEgg &egg, unsigned long &lastMoveTime, unsigned lon
 void createEgg() {
     unsigned long currentTime = millis();
     unsigned long eggInterval = getEggInterval();
-
-    if ((currentTime - lastEggSpawnTime >= eggInterval) && !fallingEgg.active && !gameOver) {
-        initFallingEgg(fallingEgg);
-        lastEggSpawnTime = currentTime;
+    
+    // Kolik vajec může být aktivních
+    int maxActive = 1;
+    if (caughtEggs >= EGG_THRESHOLD_2) maxActive = 2;
+    if (caughtEggs >= EGG_THRESHOLD_3) maxActive = 3;
+    if (gameMode == MODE_B && caughtEggs >= EGG_THRESHOLD_4) maxActive = 4;
+    
+    // Spočítej aktivní vejce
+    int activeCount = 0;
+    for (int i = 0; i < MAX_EGGS; i++) {
+        if (eggs[i].active) activeCount++;
     }
-
-    if (caughtEggs >= SEC_EGG_THRESHOLD && !secondaryEgg.active && !gameOver) {
-        if (currentTime - lastEggSpawnTime >= eggInterval / 2) {
-            initFallingEgg(secondaryEgg, true);
+    
+    // Spawn nového vejce
+    if (activeCount < maxActive && !gameOver &&
+        currentTime - lastEggSpawnTime >= eggInterval / maxActive) {
+        for (int i = 0; i < MAX_EGGS; i++) {
+            if (!eggs[i].active) {
+                initFallingEgg(eggs[i]);
+                lastEggSpawnTime = currentTime;
+                break;
+            }
         }
     }
 }
@@ -469,8 +493,10 @@ void drawScene() {
     DrawImgRle(Background, Background_Pal, 0, 0, 320, 240);
     drawRabbit();
     drawWolf();
-    drawFallingEgg(fallingEgg);
-    drawFallingEgg(secondaryEgg);
+    
+    for (int i = 0; i < MAX_EGGS; i++) {
+        drawFallingEgg(eggs[i]);
+    }
     
     if (showBrokenEgg && lastBrokenEggPath != nullptr) {
         bool isLeft = (lastBrokenEggPath == leftTopPath || lastBrokenEggPath == leftBottomPath);
@@ -528,7 +554,9 @@ void loop() {
 
     if (gameState == STATE_INTRO) {
         if (ch == KEY_A) {
-            startGame();
+            startGame(MODE_A);
+        } else if (ch == KEY_B) {
+            startGame(MODE_B);
         } else if (ch == KEY_X) {
             gameState = STATE_SCORE;
             drawScoreScreen();
@@ -538,7 +566,9 @@ void loop() {
 
     if (gameState == STATE_SCORE) {
         if (ch == KEY_A) {
-            startGame();
+            startGame(MODE_A);
+        } else if (ch == KEY_B) {
+            startGame(MODE_B);
         }
         return;
     }
@@ -582,8 +612,9 @@ void loop() {
         return;
     }
 
-    updateFallingEgg(fallingEgg, lastMoveTime, eggMoveDuration);
-    updateFallingEgg(secondaryEgg, secondaryEggLastMoveTime, eggMoveDuration);
+    for (int i = 0; i < MAX_EGGS; i++) {
+        updateFallingEgg(eggs[i], eggMoveDuration);
+    }
 
     if (showBrokenEgg && (millis() - brokenEggStartTime > BROKENEGG_CHICK_DELAY)) {
         showBrokenEgg = false;
